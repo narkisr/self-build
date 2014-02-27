@@ -9,6 +9,7 @@
                  [org.clojure/core.incubator "0.1.2"]
                  [ruiyun/tools.timer "1.0.1"]
                  [me.raynes/conch "0.5.0"]
+                 [com.draines/postal "1.11.1"]
                  ]
   
   :main self-build.core
