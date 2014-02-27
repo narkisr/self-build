@@ -1,0 +1,30 @@
+{
+ :jobs [
+    {:name "play"
+     :repo "git@github.com:narkisr/play.git" 
+     :target "/tmp/play" 
+     :steps [{:cmd "foo" :args ["help"]}]
+     :poll 3000
+    }
+
+    {:name "celestial"
+     :repo "git@github.com:celestial-ops/celestial-core.git" 
+     :target "/tmp/celestial" 
+     :steps [{:cmd "lein" :args ["runtest"]}]
+     :poll 3000
+    }
+  ]
+ 
+  :ctx {
+    :ssh-key "/home/ronen/.ssh/id_rsa"
+    :smtp {
+      :host "smtp.gmail.com"
+      :user "gookup"
+      :pass ""
+      :ssl :yes!!!11
+     } 
+    :mail {
+      :from "gookup@gmail.com" :to "narkisr@gmail.com"
+    }
+  }
+} 

@@ -1,6 +1,7 @@
 (ns self-build.core
   (:gen-class true)
   (:require 
+    [clojure.tools.reader.edn :as edn]
     [postal.core :as p :refer (send-message)]
     [clojure.java.io :as io :refer (file)]
     [taoensso.timbre :as timbre]
@@ -39,26 +40,24 @@
 (defn build 
    "runs build steps" 
    [{:keys [steps target name] :as job} {:keys [smtp mail] :as ctx}]
-   (info "starting to build" name)
+   (info "Starting to build" name)
    (try 
      (doseq [{:keys [cmd args]} steps] 
        (sh- cmd (conj args {:dir target})))
+     (info "Finished building" name)
      (catch Throwable e
        (error e)
        (send-message smtp
          (merge mail 
            {:subject (<< "building ~{name} failed!") 
-            :body (<< "failed to build ~{name} due to ~(.getMessage e)")})) 
-       )
-     )
-     (info "finished building" name))
+            :body (<< "failed to build ~{name} due to ~(.getMessage e)")})))))
 
 (defn initialize 
    "init build" 
    [{:keys [repo target] :as job} {:keys [ssh-key] :as ctx}]
    (when-not (.exists (file target))
      (with-identity {:ssh-prvkey ssh-key}
-       (info "Cloned " repo)
+       (info "Cloned" repo)
        (git-clone-full repo target)
        (build job ctx))))
 
@@ -73,36 +72,18 @@
         (when (> (.size trackingRefUpdates) 0)
           (doseq [c advertisedRefs] (g/git-merge repo c))
           (info "Change detected running the build:")
-          (build job))
+          (build job ctx))
         ))))
 
 (defn run-jobs 
   "run all build jobs" 
   [jobs ctx]
-  (doseq [{:keys [poll] :as job} jobs] 
+  (doseq [{:keys [poll name] :as job} jobs] 
+    (info "Setting up job" name)
     (initialize job ctx)
     (run-task! (periodic-check job ctx) :period poll)))
 
-(defn -main [& args]
-  (run-jobs 
-    [{:name "play"
-      :repo "git@github.com:narkisr/play.git" 
-      :target "/tmp/play" 
-      :steps [{:cmd "foo" :args ["help"]}]
-      :poll 3000
-     }
-     {:name "celestial"
-      :repo "git@github.com:celestial-ops/celestial-core.git" 
-      :target "/tmp/celestial" 
-      :steps [{:cmd "lein" :args ["runtest"]}]
-      :poll 3000
-     }]
-     {:ssh-key "/home/ronen/.ssh/id_rsa"
-      :smtp 
-        {:host "smtp.gmail.com"
-         :user "gookup"
-         :pass ""
-         :ssl :yes!!!11} 
-      :mail {:from "gookup@gmail.com" :to "narkisr@gmail.com"}
-     }))
+(defn -main [f & args]
+  (let [{:keys [ctx jobs]} (edn/read-string (slurp f))]
+    (run-jobs jobs ctx)))
 
