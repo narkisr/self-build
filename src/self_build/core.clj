@@ -1,9 +1,7 @@
 (ns self-build.core
   (:gen-class true)
   (:require 
-    [clj-time.core :as t]
-    [clj-time.periodic :refer  [periodic-seq]]
-    [chime :refer  [chime-at]]
+    [ruiyun.tools.timer :refer (run-task!)]
     [clojure.core.strint :refer (<<)]
     [clojure.string :refer (join split)]
     [me.raynes.conch :as c]
@@ -41,7 +39,9 @@
 (defn build 
    "runs build steps" 
    [{:keys [steps target] :as job} ]
-   (doseq [{:keys [cmd args]} steps] (sh- cmd (conj args {:dir target}))))
+   (doseq [{:keys [cmd args]} steps] 
+     (Thread/sleep 14000)
+     (sh- cmd (conj args {:dir target}))))
 
 (defn initialize 
    "init build" 
@@ -50,32 +50,32 @@
      (git-clone-full repo target)
      (build job)))
 
-(defn periodic-check [{:keys [path] :as job}]
+(defn periodic-check [{:keys [target] :as job}]
   (fn []
     (println "checking build status")
     (with-identity {:ssh-prvkey "/home/ronen/.ssh/id_rsa"}
-      (let [repo (g/load-repo path) 
+      (let [repo (g/load-repo target) 
             {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
         (when (> (.size trackingRefUpdates) 0)
           (doseq [c advertisedRefs] (g/git-merge repo c))
-          (println "Change detected running the build:"))
+          (println "Change detected running the build:")
+          (build job) 
+          )
         ))))
 
 (defn run-jobs 
   "run all build jobs" 
   [jobs]
   (doseq [{:keys [poll] :as job} jobs] 
-    ;; (initialize job)
-    (chime-at (periodic-seq (t/now) (-> 1 t/minutes)) (periodic-check job))))
-
-(chime-at (periodic-seq (t/now) (-> 1 t/minutes)) #(println %))
+    (initialize job)
+    (run-task! (periodic-check job) :period poll)))
 
 (defn -main [& args]
   (run-jobs [
-    {:name "celestial"
-     :repo "git@github.com:celestial-ops/celestial-core.git" 
-     :target "/tmp/celestial" 
-     :steps [{:cmd "lein" :args ["runtest"]}]
-     :poll 5000
+    {:name "play"
+     :repo "git@github.com:narkisr/play.git" 
+     :target "/tmp/play" 
+     :steps [{:cmd "lein" :args ["help"]}]
+     :poll 3000
     }]))
 

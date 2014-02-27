@@ -6,10 +6,9 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clj-jgit "0.6.3"] 
                  [org.clojure/core.incubator "0.1.2"]
-                 [jarohen/chime "0.1.5"]
+                 [ruiyun/tools.timer "1.0.1"]
                  [me.raynes/conch "0.5.0"]
                  ]
   
   :main self-build.core
-  ;; :aliases {""  [ "with-profile" "prod" "do" "compile," "trampoline" "run"]}
   )
