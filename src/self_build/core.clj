@@ -39,15 +39,19 @@
 
 (defn build 
    "runs build steps" 
-   [{:keys [steps target] :as job} ]
+   [{:keys [steps target name] :as job} ]
+   (info "starting to build " name)
    (doseq [{:keys [cmd args]} steps] 
-     (sh- cmd (conj args {:dir target}))))
+     (sh- cmd (conj args {:dir target})))
+   (info "finished building " name)
+  )
 
 (defn initialize 
    "init build" 
    [{:keys [repo target] :as job}]
    (when-not (.exists (as-file target))
      (with-identity {:ssh-prvkey "/home/ronen/.ssh/id_rsa"}
+       (info "Cloned " repo)
        (git-clone-full repo target)
        (build job))))
 
@@ -77,5 +81,12 @@
      :target "/tmp/play" 
      :steps [{:cmd "lein" :args ["help"]}]
      :poll 3000
-    }]))
+    }
+   {:name "celestial"
+     :repo "git@github.com:celestial-ops/celestial-core.git" 
+     :target "/tmp/celestial" 
+     :steps [{:cmd "lein" :args ["runtest"]}]
+     :poll 3000
+    }           
+  ]))
 
