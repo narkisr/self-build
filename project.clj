@@ -1,8 +1,10 @@
-(defproject self-build "0.1.0-SNAPSHOT"
-  :description "A simple build server for Clojure apps"
-  :url ""
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject self-build "0.0.1"
+  :description 
+  "self-build is a simple build server currently focused on simplicity and easy setup, its main goal is to enable a continues build by just running lein self-build jobs.edn"
+  :url "https://github.com/narkisr/self-build"
+  :license  {
+    :name "Apache License, Version 2.0" :url "http://www.apache.org/licenses/LICENSE-2.0.html"
+  }
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clj-jgit "0.6.3"] 
                  [com.taoensso/timbre "3.1.1"]
