@@ -5,7 +5,7 @@
     [postal.core :as p :refer (send-message)]
     [clojure.java.io :as io :refer (file)]
     [taoensso.timbre :as timbre]
-    [ruiyun.tools.timer :refer (run-task!)]
+    [ruiyun.tools.timer :refer (run-task! deamon-timer)]
     [clojure.core.strint :refer (<<)]
     [clojure.string :refer (join split)]
     [me.raynes.conch :as c]
@@ -82,7 +82,7 @@
   (doseq [{:keys [poll name] :as job} jobs] 
     (info "Setting up job" name)
     (initialize job ctx)
-    (run-task! (periodic-check job ctx) :period poll)))
+    (run-task! (periodic-check job ctx) :period poll :by (deamon-timer))))
 
 (defn locknload
   "load jobs and run them" 
