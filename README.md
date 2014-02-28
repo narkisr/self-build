@@ -57,6 +57,9 @@ Now run builds (possibly in a tmux session):
 
 ```clojure
 $ lein self-build jobs.edn
+2014-Feb-28 21:06:18 +0200 nucleus INFO [self-build.core] - Setting up job play
+2014-Feb-28 21:06:18 +0200 nucleus INFO [self-build.core] - Cloned git@github.com:narkisr/play.git
+2014-Feb-28 21:06:25 +0200 nucleus INFO [self-build.core] - Starting to build play
 ```
 # Copyright and license
 
