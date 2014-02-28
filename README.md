@@ -20,7 +20,8 @@ Add to your project file:
 
 Define jobs edn file:
 
-```clojure {
+```clojure 
+{
  :jobs [
     {:name "play"
      :repo "git@github.com:narkisr/play.git" 
