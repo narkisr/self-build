@@ -10,7 +10,7 @@
     {:name "celestial"
      :repo "git@github.com:celestial-ops/celestial-core.git" 
      :target "/tmp/celestial" 
-     :steps [{:cmd "lein" :args ["runtest"]}]
+     :steps [{:cmd "lein" :args ["runtest"] :timeout 180}]
      :poll 3000
     }
   ]

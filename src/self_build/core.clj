@@ -22,15 +22,16 @@
 
 (defn- options [args]
   (let [log-proc (fn [out proc] (info out))
-        defaults {:verbose true :timeout (* 60 1000) :out log-proc :err log-proc}]
+        defaults {:verbose true :timeout 60 :out log-proc :err log-proc}]
     (if (map? (last args))
-      [(butlast args) (merge defaults (last args))] 
-      [args defaults])))
+        [(butlast args) (merge defaults (last args))] 
+        [args defaults])
+    ))
 
 (defn sh- 
   "Runs a command localy and logs its output streams"
   [cmd args]
-  (let [[args opts] (options args) ]
+  (let [[args opts] (update-in (options args) [:timeout] (partial * 60))]
     (info cmd (join " " args))
     (case (deref (:exit-code (c/run-command cmd args opts)))
       :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
@@ -42,8 +43,8 @@
    [{:keys [steps target name] :as job} {:keys [smtp mail] :as ctx}]
    (info "Starting to build" name)
    (try 
-     (doseq [{:keys [cmd args]} steps] 
-       (sh- cmd (conj args {:dir target})))
+     (doseq [{:keys [cmd args timeout] :or {timeout 60}} steps] 
+       (sh- cmd (conj args {:dir target :timeout timeout})))
      (info "Finished building" name)
      (catch Throwable e
        (error e)
@@ -65,7 +66,7 @@
   "periodical check of build status"
   [{:keys [target] :as job} {:keys [ssh-key] :as ctx}]
   (fn []
-    (trace "checking build status")
+    (info "Checking build status")
     (with-identity {:ssh-prvkey ssh-key}
       (let [repo (g/load-repo target) 
             {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
@@ -83,7 +84,13 @@
     (initialize job ctx)
     (run-task! (periodic-check job ctx) :period poll)))
 
-(defn -main [f & args]
+(defn locknload
+  "load jobs and run them" 
+  [f]
   (let [{:keys [ctx jobs]} (edn/read-string (slurp f))]
-    (run-jobs jobs ctx)))
+   (run-jobs jobs ctx))
+  )
+
+(defn -main [f & args]
+  (locknload f))
 
