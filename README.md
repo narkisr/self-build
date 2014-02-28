@@ -3,7 +3,7 @@
 self-build is a simple build server currently focused on simplicity and easy setup, its main goal is to enable a continues build by just running:
 
 ```bash
-$ lein self-build
+$ lein self-build jobs.edn
 ```
 
 Right from within a lein project thus saving us from the need to setup Jenkins or other more complex solutions.
@@ -12,10 +12,51 @@ self-build will support only Git as SCM.
 
 # Usage
 
-TDB
+Add to your project file:
 
-# License
+```clojure
+:plugins [[self-build "0.0.1"]]
+```
 
+Define jobs edn file:
+
+```clojure {
+ :jobs [
+    {:name "play"
+     :repo "git@github.com:narkisr/play.git" 
+     :target "/tmp/play" 
+     :steps [{:cmd "foo" :args ["help"]}]
+     :poll 3000
+    }
+
+    {:name "celestial"
+     :repo "git@github.com:celestial-ops/celestial-core.git" 
+     :target "/tmp/celestial" 
+     :steps [{:cmd "lein" :args ["runtest"] :timeout 180}]
+     :poll 3000
+    }
+  ]
+ 
+  :ctx {
+    :ssh-key "/home/foo/.ssh/id_rsa"
+    :smtp {
+      :host "smtp.gmail.com"
+      :user "foo"
+      :pass ""
+      :ssl :yes!!!11
+     } 
+    :mail {
+      :from "foo@gmail.com" :to "youremail@gmail.com"
+    }
+  }
+}
+```
+
+Now run builds (possibly in a tmux session):
+
+```clojure
+$ lein self-build jobs.edn
+```
 # Copyright and license
 
 Copyright [2013] [Ronen Narkis]
