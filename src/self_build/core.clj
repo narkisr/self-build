@@ -83,13 +83,13 @@
   (doseq [{:keys [poll name] :as job} jobs] 
     (info "Setting up job" name)
     (initialize job ctx)
-    (run-task! (periodic-check job ctx) :period poll :by (deamon-timer))))
+    (run-task! (periodic-check job ctx) :period poll )))
 
 (defn locknload
   "load jobs and run them" 
   [f]
   (let [{:keys [ctx jobs]} (edn/read-string (slurp f))]
-   (run-jobs jobs ctx))
+    (run-jobs jobs ctx))
   )
 
 (defn -main [f & args]
