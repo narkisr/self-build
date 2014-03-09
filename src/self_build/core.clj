@@ -31,7 +31,7 @@
 (defn sh- 
   "Runs a command localy and logs its output streams"
   [cmd args]
-  (let [[args opts] (update-in (options args) [:timeout] (partial * 60))]
+  (let [[args opts] (update-in (options args) [1 :timeout] (partial * 60 1000))]
     (info cmd (join " " args))
     (case (deref (:exit-code (c/run-command cmd args opts)))
       :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
