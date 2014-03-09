@@ -68,13 +68,14 @@
   (fn []
     (info "Checking build status")
     (with-identity {:ssh-prvkey ssh-key}
-      (let [repo (g/load-repo target) 
-            {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
-        (when (> (.size trackingRefUpdates) 0)
-          (doseq [c advertisedRefs] (g/git-merge repo c))
-          (info "Change detected running the build:")
-          (build job ctx))
-        ))))
+      (try
+        (let [repo (g/load-repo target) 
+              {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
+          (when (> (.size trackingRefUpdates) 0)
+            (doseq [c advertisedRefs] (g/git-merge repo c))
+            (info "Change detected running the build:")
+            (build job ctx)))
+        (catch Throwable e (error e))))))
 
 (defn run-jobs 
   "run all build jobs" 
