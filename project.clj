@@ -20,6 +20,20 @@
                  [org.clojure/tools.reader "0.8.3"]]
 
   :plugins [[lein-tag "0.1.0"] [lein-set-version "0.3.0"]]
+
+  :profiles {
+    :dev { 
+      :set-version {
+        :updates [ 
+          {:path "README.md" :search-regex #"\"\d+\.\d+\.\d+\""}
+        ]
+      }
+    }
+  }
+ 
+  :aliases {"self-build" ["trampoline" "run" "fixtures/jobs.edn"] }
+
+
   
   :main self-build.core
   )
