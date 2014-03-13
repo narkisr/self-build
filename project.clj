@@ -14,6 +14,7 @@
                  [clj-jgit "0.6.3"] 
                  [com.taoensso/timbre "3.1.1"]
                  [org.clojure/core.incubator "0.1.2"]
+                 [me.raynes/fs "1.4.5"]
                  [ruiyun/tools.timer "1.0.1"]
                  [me.raynes/conch "0.5.0"]
                  [com.draines/postal "1.11.1"]

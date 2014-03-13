@@ -1,6 +1,7 @@
 (ns self-build.core
   (:gen-class true)
   (:require 
+    [me.raynes.fs :as fs]
     [clojure.tools.reader.edn :as edn]
     [postal.core :as p :refer (send-message)]
     [clojure.java.io :as io :refer (file)]
@@ -62,9 +63,16 @@
        (git-clone-full repo target)
        (build job ctx))))
 
+(defn re-initialize 
+   "re-checkout code descarding existing source (mainly useful on merge conflicts)." 
+   [{:keys [target name] :as job} ctx]
+   (fs/delete-dir target)
+   (initialize job ctx)
+  )
+
 (defn periodic-check 
   "periodical check of build status"
-  [{:keys [target] :as job} {:keys [ssh-key] :as ctx}]
+  [{:keys [target name clear-merge-fail] :as job} {:keys [ssh-key] :as ctx}]
   (fn []
     (info "Checking build status")
     (with-identity {:ssh-prvkey ssh-key}
@@ -72,9 +80,15 @@
         (let [repo (g/load-repo target) 
               {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
           (when (> (.size trackingRefUpdates) 0)
-            (doseq [c advertisedRefs] (g/git-merge repo c))
+            (doseq [c advertisedRefs] 
+              (when-not (.isSuccessful (.getMergeStatus (g/git-merge repo c)))
+                (throw (ExceptionInfo. (<< "Failed to merge code on ~{name}") {:merged-failed true}))))
             (info "Change detected running the build:")
             (build job ctx)))
+        (catch ExceptionInfo e 
+          (when clear-merge-fail
+            (warn "Merge failed, clearing source and starting from scratch")
+            (re-initialize job ctx)))
         (catch Throwable e (error e))))))
 
 (defn run-jobs 
