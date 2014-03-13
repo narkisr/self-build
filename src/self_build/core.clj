@@ -86,7 +86,7 @@
             (info "Change detected running the build:")
             (build job ctx)))
         (catch ExceptionInfo e 
-          (when clear-merge-fail
+          (when (and clear-merge-fail (:merged-failed (.getData e)))
             (warn "Merge failed, clearing source and starting from scratch")
             (re-initialize job ctx)))
         (catch Throwable e (error e))))))
