@@ -31,6 +31,7 @@ Define jobs edn file:
     }
 
     {:name "celestial"
+     :clear-merge-fail true
      :repo "git@github.com:celestial-ops/celestial-core.git" 
      :target "/tmp/celestial" 
      :steps [{:cmd "lein" :args ["runtest"] :timeout 180}]

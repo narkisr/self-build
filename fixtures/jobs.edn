@@ -1,6 +1,7 @@
 {
  :jobs [
     {:name "play"
+     :clear-merge-fail true
      :repo "git@github.com:narkisr/play.git" 
      :target "/tmp/play" 
      :steps [{:cmd "foo" :args ["help"]}]
