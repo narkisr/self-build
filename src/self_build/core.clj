@@ -62,7 +62,7 @@
       (info "Cloned" repo)
       (git-clone-full repo target)))
   (let [repo (g/load-repo target)]
-    (info (git-branch-current repo))
+    (debug "Currently in branch" (git-branch-current repo))
     (when  (and branch (not= branch (git-branch-current repo)))
       (info "Checkout" branch)
       (git-checkout repo branch true true (<< "origin/~{branch}"))))
