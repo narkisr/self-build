@@ -1,6 +1,8 @@
 (ns self-build.core
   (:gen-class true)
   (:require 
+    [subs.core :refer (validate! validation when-not-nil every-kv)]
+    [formation.core :as form]
     [me.raynes.fs :as fs]
     [clojure.tools.reader.edn :as edn]
     [postal.core :as p :refer (send-message)]
@@ -72,8 +74,7 @@
   "re-checkout code descarding existing source (mainly useful on merge conflicts)." 
   [{:keys [target name] :as job} ctx]
   (fs/delete-dir target)
-  (initialize job ctx)
-  )
+  (initialize job ctx))
 
 (defn periodic-check 
   "periodical check of build status"
@@ -104,12 +105,31 @@
     (initialize job ctx)
     (run-task! (periodic-check job ctx) :period poll )))
 
+(def ctx-v
+  {:ctx {
+     :ssh-key #{:required :String} 
+     :smtp {
+       :host #{:required :String} 
+       :user #{:required :String} 
+       :pass #{:required :String} 
+       :ssl #{:required :Keyword}
+     }
+     :mail {
+       :from #{:required :String} :to #{:required :String} 
+     }
+   }})
+
+(defn ctx-validation 
+   "Validating ctx" 
+   [ctx]
+   (validate! ctx ctx-v))
+
 (defn locknload
   "load jobs and run them" 
   [f]
-  (let [{:keys [ctx jobs]} (edn/read-string (slurp f))]
-    (run-jobs jobs ctx))
-  )
+  (let [{:keys [jobs]} (edn/read-string (slurp f)) 
+        {:keys [ctx]} (form/config "self-build" ctx-validation)]
+    (run-jobs jobs ctx)))
 
 (defn -main [f & args]
   (locknload f))

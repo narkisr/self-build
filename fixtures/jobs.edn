@@ -16,17 +16,4 @@
      :poll 3000
     }
   ]
- 
-  :ctx {
-    :ssh-key "/home/ronen/.ssh/id_rsa"
-    :smtp {
-      :host "smtp.gmail.com"
-      :user "gookup"
-      :pass ""
-      :ssl :yes!!!11
-     } 
-    :mail {
-      :from "gookup@gmail.com" :to "narkisr@gmail.com"
-    }
-  }
 } 
