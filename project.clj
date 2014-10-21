@@ -17,12 +17,12 @@
                  [substantiation "0.1.3"]
                  [me.raynes/fs "1.4.5"]
                  [ruiyun/tools.timer "1.0.1"]
-                 [me.raynes/conch "0.5.0"]
+                 [me.raynes/conch "0.8.0"]
                  [com.draines/postal "1.11.1"]
                  [formation "0.0.1"]
                  [org.clojure/tools.reader "0.8.3"]]
 
-  :plugins [[lein-tag "0.1.0"] [lein-set-version "0.3.0"]]
+  :plugins [[lein-tag "0.1.0"] [lein-set-version "0.3.0"] [lein-ancient "0.5.5"]]
 
   :profiles {
     :dev { 

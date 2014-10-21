@@ -12,6 +12,7 @@
     [clojure.core.strint :refer (<<)]
     [clojure.string :refer (join split)]
     [me.raynes.conch :as c]
+    [me.raynes.conch.low-level :as low]
     [clj-jgit.porcelain :as g :refer (with-identity git-clone-full git-checkout git-branch-current)])
   (:import clojure.lang.ExceptionInfo))
 
@@ -36,10 +37,10 @@
   [cmd args]
   (let [[args opts] (update-in (options args) [1 :timeout] (partial * 60 1000))]
     (info cmd (join " " args))
-    (case (deref (:exit-code (c/run-command cmd args opts)))
-      :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
-      0 nil
-      (throw (ExceptionInfo. (<< "Failed to execute: ~{cmd}") opts)))))
+      (case (deref (:exit-code (c/run-command cmd args opts)))
+         :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
+          0 nil
+        )))
 
 (defn build 
   "runs build steps" 
@@ -50,11 +51,11 @@
       (sh- cmd (conj args {:dir target :timeout timeout})))
     (info "Finished building" name)
     (catch Throwable e
-      (error e)
+      (error (.getMessage e))
       (send-message smtp
-                    (merge mail 
-                           {:subject (<< "building ~{name} failed!") 
-                            :body (<< "failed to build ~{name} due to ~(.getMessage e)")})))))
+         (merge mail 
+           {:subject (<< "building ~{name} failed!") 
+            :body (<< "failed to build ~{name} due to ~(.getMessage e)")})))))
 
 (defn initialize 
   "init build" 
