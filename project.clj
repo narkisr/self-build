@@ -15,7 +15,7 @@
                  [com.taoensso/timbre "3.1.1"]
                  [org.clojure/core.incubator "0.1.2"]
                  [substantiation "0.1.3"]
-                 [me.raynes/fs "1.4.5"]
+                 [me.raynes/fs "1.4.6"]
                  [ruiyun/tools.timer "1.0.1"]
                  [me.raynes/conch "0.8.0"]
                  [com.draines/postal "1.11.1"]

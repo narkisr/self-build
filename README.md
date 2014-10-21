@@ -40,6 +40,14 @@ Define jobs edn file:
     }
   ]
  
+}
+```
+
+Now configure under either ~/.self-build.edn or /etc/self-build/self-build.edn:
+
+
+```clojure
+{
   :ctx {
     :ssh-key "/home/foo/.ssh/id_rsa"
     :smtp {
