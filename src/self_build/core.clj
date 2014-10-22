@@ -13,20 +13,23 @@
     [clojure.string :refer (join split)]
     [me.raynes.conch :as c]
     [me.raynes.conch.low-level :as low]
+    [me.raynes.conch.low-level :as sh]
     [clj-jgit.porcelain :as g :refer (with-identity git-clone-full git-checkout git-branch-current)])
   (:import clojure.lang.ExceptionInfo))
 
 (timbre/refer-timbre)
 
-(defn log-res 
-  "Logs a cmd result"
-  [out]
-  (when-not (empty? out) 
-    (doseq [line (.split out "\n")] (info line))))
+; a sink into which we collect error logs and grabbing them during mail send after an exception thrown
+(def errors (atom {}))
 
-(defn- options [args]
-  (let [log-proc (fn [out proc] (info out))
-        defaults {:verbose true :timeout 60 :out log-proc :err log-proc}]
+(defn log-proc 
+  "logging out stdout/stderr and collecting both of them to errors atom"
+  [id out proc] 
+  (swap! errors (fn [m] (assoc m id (str (m id) out "\n"))))
+  (info out))
+
+(defn- options [id args]
+  (let [defaults {:verbose true :timeout 60 :out (partial log-proc id) :err (partial log-proc id)}]
     (if (map? (last args))
       [(butlast args) (merge defaults (last args))] 
       [args defaults])
@@ -34,13 +37,16 @@
 
 (defn sh- 
   "Runs a command localy and logs its output streams"
-  [cmd args]
-  (let [[args opts] (update-in (options args) [1 :timeout] (partial * 60 1000))]
-    (info cmd (join " " args))
+  [id cmd args]
+  (info cmd (join " " args))
+  (let [[args opts] (update-in (options id args) [1 :timeout] (partial * 60 1000))]
+    (try
       (case (deref (:exit-code (c/run-command cmd args opts)))
-         :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
-          0 nil
-        )))
+       :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
+        0 nil)
+      (catch Throwable e
+        (throw (ExceptionInfo. (.getMessage e) {:id id}))) 
+      )))
 
 (defn build 
   "runs build steps" 
@@ -48,14 +54,15 @@
   (info "Starting to build" name)
   (try 
     (doseq [{:keys [cmd args timeout] :or {timeout 60}} steps] 
-      (sh- cmd (conj args {:dir target :timeout timeout})))
+      (sh- name cmd (conj args {:dir target :timeout timeout})))
     (info "Finished building" name)
-    (catch Throwable e
-      (error (.getMessage e))
+    (catch ExceptionInfo e
+      (error @errors)
       (send-message smtp
-         (merge mail 
-           {:subject (<< "building ~{name} failed!") 
-            :body (<< "failed to build ~{name} due to ~(.getMessage e)")})))))
+        (merge mail 
+          {:subject (<< "building ~{name} failed!") 
+           :body (<< "failed to build ~{name} due to:\n ~(.getMessage e) ~(@errors name)")}))
+        (swap! errors assoc name ""))))
 
 (defn initialize 
   "init build" 
