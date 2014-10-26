@@ -15,7 +15,7 @@ self-build will support only Git as SCM.
 Add to your project file:
 
 ```clojure
-:plugins [[self-build "0.0.6"]]
+:plugins [[self-build "0.0.7"]]
 ```
 
 Define jobs edn file:

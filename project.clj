@@ -1,4 +1,4 @@
-(defproject self-build "0.0.6"
+(defproject self-build "0.0.7"
 
   :description 
   "self-build is a simple build server currently focused on simplicity and easy setup,
