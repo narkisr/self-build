@@ -36,7 +36,7 @@
  
   :aliases {"self-build" ["trampoline" "run" "fixtures/jobs.edn"] }
 
-
+  :signing  {:gpg-key "narkisr@gmail.com"}
   
   :main self-build.core
   )
