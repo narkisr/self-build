@@ -1,26 +1,27 @@
 (ns self-build.core
   (:gen-class true)
   (:require 
-    [subs.core :refer (validate! validation when-not-nil every-kv)]
-    [formation.core :as form]
-    [me.raynes.fs :as fs]
-    [clojure.tools.reader.edn :as edn]
-    [postal.core :as p :refer (send-message)]
-    [clojure.java.io :as io :refer (file)]
-    [taoensso.timbre :as timbre]
-    [ruiyun.tools.timer :refer (run-task! deamon-timer)]
-    [clojure.core.strint :refer (<<)]
-    [clojure.string :refer (join split)]
-    [me.raynes.conch :as c]
-    [me.raynes.conch.low-level :as low]
-    [me.raynes.conch.low-level :as sh]
-    [clj-jgit.porcelain :as g :refer (with-identity git-clone-full git-checkout git-branch-current)])
+   [subs.core :refer (validate! validation when-not-nil every-kv)]
+   [formation.core :as form]
+   [me.raynes.fs :as fs]
+   [clojure.tools.reader.edn :as edn]
+   [postal.core :as p :refer (send-message)]
+   [clojure.java.io :as io :refer (file)]
+   [taoensso.timbre :as timbre]
+   [ruiyun.tools.timer :refer (run-task! deamon-timer)]
+   [clojure.core.strint :refer (<<)]
+   [clojure.string :refer (join split)]
+   [me.raynes.conch :as c]
+   [me.raynes.conch.low-level :as low]
+   [me.raynes.conch.low-level :as sh]
+   [clj-jgit.porcelain :as g :refer (with-identity git-clone-full git-checkout git-branch-current)])
   (:import clojure.lang.ExceptionInfo))
 
 (timbre/refer-timbre)
 
 ; a sink into which we collect error logs and grabbing them during mail send after an exception thrown
 (def errors (atom {}))
+(def statuses (atom {}))
 
 (defn log-proc 
   "logging out stdout/stderr and collecting both of them to errors atom"
@@ -42,11 +43,32 @@
   (let [[args opts] (update-in (options id args) [1 :timeout] (partial * 60 1000))]
     (try
       (case (deref (:exit-code (c/run-command cmd args opts)))
-       :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
+        :timeout (throw (ExceptionInfo. (<< "timed out while executing: ~{cmd}") opts))
         0 nil)
       (catch Throwable e
         (throw (ExceptionInfo. (.getMessage e) {:id id}))) 
       )))
+
+
+(defn handle-success 
+  [name smtp mail]
+  (let [{:keys [status date]} (@statuses name)]
+    (when (= status :error)
+      (send-message smtp
+         (merge mail 
+            {:subject (<< "Building ~{name} restored to be succeful!") 
+             :body (<< "The build which failed on ~{date} is now working")}))))
+  (swap! statuses assoc name {:status :success :date (java.util.Date.)}))
+
+(defn handle-error 
+  [name smtp mail e]
+  (error @errors)
+  (swap! statuses assoc name {:status :fail :date (java.util.Date.)})
+  (send-message smtp
+         (merge mail 
+            {:subject (<< "Building ~{name} failed!") 
+             :body (<< "failed to build ~{name} due to:\n ~(.getMessage e) ~(@errors name)")}))
+  (swap! errors assoc name ""))
 
 (defn build 
   "runs build steps" 
@@ -56,13 +78,8 @@
     (doseq [{:keys [cmd args timeout] :or {timeout 60}} steps] 
       (sh- name cmd (conj args {:dir target :timeout timeout})))
     (info "Finished building" name)
-    (catch ExceptionInfo e
-      (error @errors)
-      (send-message smtp
-        (merge mail 
-          {:subject (<< "building ~{name} failed!") 
-           :body (<< "failed to build ~{name} due to:\n ~(.getMessage e) ~(@errors name)")}))
-        (swap! errors assoc name ""))))
+    (handle-success name smtp mail)
+    (catch ExceptionInfo e (handle-error name smtp mail e))))
 
 (defn initialize 
   "init build" 
@@ -111,26 +128,18 @@
   (doseq [{:keys [poll name] :as job} jobs] 
     (info "Setting up job" name)
     (initialize job ctx)
-    (run-task! (periodic-check job ctx) :period poll )))
+    (run-task! (periodic-check job ctx) :period poll)))
 
 (def ctx-v
-  {:ctx {
-     :ssh-key #{:required :String} 
-     :smtp {
-       :host #{:required :String} 
-       :user #{:required :String} 
-       :pass #{:required :String} 
-       :ssl #{:required :Keyword}
-     }
-     :mail {
-       :from #{:required :String} :to #{:required :String} 
-     }
-   }})
+  {:ctx {:ssh-key #{:required :String} 
+         :smtp {:host #{:required :String} :user #{:required :String} 
+                :pass #{:required :String} :ssl #{:required :Keyword} }
+         :mail {:from #{:required :String} :to #{:required :String}}}})
 
 (defn ctx-validation 
-   "Validating ctx" 
-   [ctx]
-   (validate! ctx ctx-v))
+  "Validating ctx" 
+  [ctx]
+  (validate! ctx ctx-v))
 
 (defn locknload
   "load jobs and run them" 
