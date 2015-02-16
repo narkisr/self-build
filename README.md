@@ -12,11 +12,9 @@ self-build will support only Git as SCM.
 
 # Usage
 
-Add to your project file:
+Add to your project file under plugins section:
 
-```clojure
-:plugins [[self-build "0.0.9"]]
-```
+[![Clojars Project](http://clojars.org/self-build/latest-version.svg)](http://clojars.org/self-build)
 
 Define jobs edn file:
 
