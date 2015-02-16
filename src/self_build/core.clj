@@ -53,16 +53,15 @@
 (defn handle-success 
   [name smtp mail]
   (let [{:keys [status date]} (@statuses name)]
-    (when (= status :error)
+    (when (= status :fail)
       (send-message smtp
          (merge mail 
-            {:subject (<< "Building ~{name} restored to be succeful!") 
+            {:subject (<< "Building ~{name} restored to succeful!") 
              :body (<< "The build which failed on ~{date} is now working")}))))
   (swap! statuses assoc name {:status :success :date (java.util.Date.)}))
 
 (defn handle-error 
   [name smtp mail e]
-  (error @errors)
   (swap! statuses assoc name {:status :fail :date (java.util.Date.)})
   (send-message smtp
          (merge mail 
