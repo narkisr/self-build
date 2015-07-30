@@ -15,7 +15,9 @@
    [me.raynes.conch.low-level :as low]
    [me.raynes.conch.low-level :as sh]
    [clj-jgit.porcelain :as g :refer (with-identity git-clone-full git-checkout git-branch-current)])
-  (:import clojure.lang.ExceptionInfo))
+  (:import 
+    org.eclipse.jgit.api.errors.CheckoutConflictException 
+    clojure.lang.ExceptionInfo))
 
 (timbre/refer-timbre)
 
@@ -100,6 +102,13 @@
   (fs/delete-dir target)
   (initialize job ctx))
 
+(defn safe-merge [repo c]
+   (try 
+     (when-not (.isSuccessful (.getMergeStatus (g/git-merge repo c)))
+       (throw (ExceptionInfo. (<< "Failed to merge code on ~{name}") {:merged-failed true})))
+      (catch CheckoutConflictException e
+        (throw (ExceptionInfo. (<< "Failed to checkout code on ~(.getConflictingPaths e)") {:merged-failed true})))))
+
 (defn periodic-check 
   "periodical check of build status"
   [{:keys [target name clear-merge-fail] :as job} {:keys [ssh-key] :as ctx}]
@@ -110,9 +119,7 @@
         (let [repo (g/load-repo target) 
               {:keys [trackingRefUpdates advertisedRefs]} (bean (g/git-fetch repo))]
           (when (> (.size trackingRefUpdates) 0)
-            (doseq [c advertisedRefs] 
-              (when-not (.isSuccessful (.getMergeStatus (g/git-merge repo c)))
-                (throw (ExceptionInfo. (<< "Failed to merge code on ~{name}") {:merged-failed true}))))
+            (doseq [c advertisedRefs] (safe-merge repo c))
             (info "Change detected running the build:")
             (build job ctx)))
         (catch ExceptionInfo e 
