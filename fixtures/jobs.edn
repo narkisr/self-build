@@ -2,26 +2,26 @@
  :jobs [
     {:name "play"
      :clear-merge-fail true
-     :repo "git@github.com:narkisr/play.git" 
-     :target "/tmp/play" 
+     :repo "git@github.com:narkisr/play.git"
+     :target "/tmp/play"
      :steps [{:cmd "foo" :args ["help"]}]
      :poll 3000
     }
     {:name "alternating fail"
      :clear-merge-fail true
-     :repo "git@github.com:narkisr/play.git" 
-     :target "/tmp/play" 
+     :repo "git@github.com:narkisr/play.git"
+     :target "/tmp/play"
      :steps [
         {:cmd "mkdir" :args ["/tmp/bla"]}
      ]
      :poll 3000
     }
     {:name "celestial"
-     :repo "git@github.com:celestial-ops/celestial-core.git" 
+     :repo "git@github.com:celestial-ops/celestial-core.git"
      :branch "es"
-     :target "/tmp/celestial" 
+     :target "/tmp/celestial"
      :steps [{:cmd "lein" :args ["runtest"] :timeout 180}]
      :poll 3000
     }
   ]
-} 
+}
